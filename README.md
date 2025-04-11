@@ -3,4 +3,4 @@
 
 Minecraft Self Server Hosting made Easy!
 
-[Download the latest version](https://github.com/lazerkatsweirdstuff/servercraft/releases/download/V0.1/Servercraftv0.1.exe)
+[Download the latest version!](https://github.com/lazerkatsweirdstuff/servercraft/releases/download/V0.2/ServerCraftv0.2.exe)
