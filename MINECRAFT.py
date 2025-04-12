@@ -20,6 +20,9 @@ class MinecraftServerSetup:
         self.root.geometry("600x700")
         self.root.configure(bg="#222")
 
+        self.icon_path = None
+        self.download_icon()  # <-- Download and apply icon
+
         self.output_folder = tk.StringVar()
         self.min_ram = tk.StringVar(value="1G")
         self.max_ram = tk.StringVar(value="2G")
@@ -30,6 +33,15 @@ class MinecraftServerSetup:
         self.server_process = None
 
         self.create_widgets()
+
+    def download_icon(self):
+        try:
+            icon_url = "https://raw.githubusercontent.com/lazerkatsweirdstuff/servercraft/refs/heads/main/icon.ico"
+            self.icon_path = os.path.join(tempfile.gettempdir(), "servercraft_icon.ico")
+            urllib.request.urlretrieve(icon_url, self.icon_path)
+            self.root.iconbitmap(self.icon_path)
+        except Exception as e:
+            print(f"Failed to load icon: {e}")
 
     def create_widgets(self):
         label_style = {'bg': '#222', 'fg': 'white', 'font': ('Arial', 12)}
@@ -46,10 +58,10 @@ class MinecraftServerSetup:
         tk.Entry(self.root, textvariable=self.max_ram, **entry_style).pack()
 
         self.eula_checkbox = tk.Checkbutton(self.root, text="I accept the EULA",
-                                    variable=self.eula_accepted,
-                                    bg="#222", fg="white", font=('Arial', 10),
-                                    activebackground="#222", activeforeground="white",
-                                    selectcolor="#222")
+                                            variable=self.eula_accepted,
+                                            bg="#222", fg="white", font=('Arial', 10),
+                                            activebackground="#222", activeforeground="white",
+                                            selectcolor="#222")
         self.eula_checkbox.pack(pady=10)
 
         self.java_progress = tk.ttk.Progressbar(self.root, length=400, mode='determinate')
@@ -66,6 +78,14 @@ class MinecraftServerSetup:
                                                         font=("Consolas", 10))
         self.console_output.pack_forget()
 
+        self.command_frame = tk.Frame(self.root, bg="#222")
+        self.command_entry = tk.Entry(self.command_frame, bg="#333", fg="white", font=("Consolas", 10))
+        self.command_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.command_entry.bind("<Return>", self.send_command)
+        tk.Button(self.command_frame, text="Send", command=self.send_command,
+                  bg="#444", fg="white").pack(side="right")
+        self.command_frame.pack_forget()
+
         self.edit_button = tk.Button(self.root, text="Edit Server Settings", command=self.edit_properties,
                                      bg="#555", fg="white")
         self.edit_button.pack(pady=10)
@@ -79,9 +99,11 @@ class MinecraftServerSetup:
     def toggle_console(self):
         if self.console_visible:
             self.console_output.pack_forget()
+            self.command_frame.pack_forget()
             self.console_toggle.config(text="Show Console Output ▼")
         else:
             self.console_output.pack(pady=5, fill='both', expand=True)
+            self.command_frame.pack(pady=5, fill='x')
             self.console_toggle.config(text="Hide Console Output ▲")
         self.console_visible = not self.console_visible
 
@@ -103,7 +125,7 @@ class MinecraftServerSetup:
 
         java_path = os.path.join(folder, JAVA_FOLDER_NAME, "bin", "java.exe")
         if not os.path.exists(java_path):
-            self.log_console("Java not found. Downloading...")
+            self.log_console("Java not found in this folder. Downloading it for you...")
             if not self.download_and_extract_java(folder):
                 return
 
@@ -124,6 +146,7 @@ class MinecraftServerSetup:
             self.server_process = subprocess.Popen(
                 [java_path, f"-Xms{min_ram}", f"-Xmx{max_ram}", "-jar", SERVER_JAR_NAME, "nogui"],
                 cwd=folder,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True
@@ -144,6 +167,21 @@ class MinecraftServerSetup:
             if not line:
                 break
             self.log_console(line.strip())
+
+    def send_command(self, event=None):
+        if not self.server_process or self.server_process.poll() is not None:
+            self.log_console("[ERROR] Server is not running.")
+            return
+
+        command = self.command_entry.get().strip()
+        if command:
+            try:
+                self.server_process.stdin.write(command + '\n')
+                self.server_process.stdin.flush()
+                self.log_console(f"> {command}")
+                self.command_entry.delete(0, tk.END)
+            except Exception as e:
+                self.log_console(f"[ERROR] Failed to send command: {e}")
 
     def download_and_extract_java(self, target_folder):
         try:
@@ -197,23 +235,43 @@ class MinecraftServerSetup:
         prop_window.title("Edit server.properties")
         prop_window.geometry("400x500")
         prop_window.configure(bg="#222")
+        if self.icon_path:
+            prop_window.iconbitmap(self.icon_path)
 
         entries = {}
-
         prop_path = os.path.join(self.output_folder.get(), "server.properties")
         if not os.path.exists(prop_path):
             messagebox.showerror("Error", "server.properties file not found.")
             return
 
+        # --- Create scrollable frame ---
+        canvas = tk.Canvas(prop_window, bg="#222", highlightthickness=0)
+        scrollbar = tk.Scrollbar(prop_window, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas, bg="#222")
+
+        scroll_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        # --- End scrollable frame ---
+
+        # Read and create entries
         with open(prop_path, "r") as f:
             lines = [line.strip() for line in f.readlines() if "=" in line]
 
         for line in lines:
             key, value = line.split("=", 1)
-            tk.Label(prop_window, text=key, bg="#222", fg="white").pack()
-            entry = tk.Entry(prop_window, bg="#333", fg="white")
+            tk.Label(scroll_frame, text=key, bg="#222", fg="white").pack()
+            entry = tk.Entry(scroll_frame, bg="#333", fg="white")
             entry.insert(0, value)
-            entry.pack(pady=2)
+            entry.pack(pady=2, fill="x", padx=10)
             entries[key] = entry
 
         def apply_changes():
@@ -223,7 +281,7 @@ class MinecraftServerSetup:
             messagebox.showinfo("Saved", "Settings applied. Restarting server...")
             self.restart_server()
 
-        tk.Button(prop_window, text="Apply", command=apply_changes, bg="green", fg="white").pack(pady=20)
+        tk.Button(scroll_frame, text="Apply", command=apply_changes, bg="green", fg="white").pack(pady=20)
 
     def restart_server(self):
         if self.server_process:
@@ -233,8 +291,18 @@ class MinecraftServerSetup:
             self.server_started = False
         self.run_setup_thread()
 
+    def on_close(self):
+        if self.server_process and self.server_process.poll() is None:
+            try:
+                self.server_process.terminate()
+                self.server_process.wait(timeout=5)
+            except Exception as e:
+                print(f"Error terminating server: {e}")
+        self.root.destroy()
+
 if __name__ == "__main__":
     import tkinter.ttk as ttk
     root = tk.Tk()
     app = MinecraftServerSetup(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_close)
     root.mainloop()
