@@ -21,6 +21,7 @@ Cool Lookin' Console - For interacting with the world and sending commands as ad
 
 Easy to use server properties editor - Forget the days of boring notepad editing!
 
+Infinite Servers - For times when 3 isn't enough
 
 [Button Click]: https://img.shields.io/badge/Install-grey?style=for-the-badge&logoColor=white&logo=Files
 [Link]: https://github.com/lazerkatsweirdstuff/servercraft/releases/download/V0.3/ServerCraftv0.3.exe
