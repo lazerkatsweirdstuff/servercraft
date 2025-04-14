@@ -3,4 +3,10 @@
 
 Minecraft Self Server Hosting made Easy!
 
-[Download the latest version!](https://github.com/lazerkatsweirdstuff/servercraft/releases/download/V0.2/ServerCraftv0.2.exe)
+Choose options, click create and you have a server ready to be used on the internet!
+
+Features:
+World folder choosing - So it dosen't save in a weird place
+World Uploads as ZIP - For uploading from somewhere like [Planet Minecraft](https://www.planetminecraft.com/projects/)!
+
+[Download the latest version!](https://github.com/lazerkatsweirdstuff/servercraft/releases/download/V0.3/ServerCraftv0.3.exe)
