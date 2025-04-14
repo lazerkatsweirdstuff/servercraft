@@ -13,7 +13,7 @@ Features:
 
 World folder choosing - So it dosen't save in a weird place
 
-World Uploads as ZIP - For uploading from somewhere like [Planet Minecraft](https://www.planetminecraft.com/projects/)!
+World Uploads as ZIP - For uploading from somewhere like [Planet Minecraft](https://www.planetminecraft.com/projects/) without unzipping and moving the folder (Annoying!)
 
 RAM Usage Choosing - For Big or small servers
 
