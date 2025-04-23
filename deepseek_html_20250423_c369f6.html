@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servercraft - Minecraft Server Management</title>
+    <style>
+        /* Dark theme with exact colors */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2D2D2D;
+            color: #E0E0E0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .app-window {
+            width: 90%;
+            max-width: 800px;
+            background-color: #1E1E1E;
+            border: 1px solid #444;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            margin: 20px 0;
+        }
+        
+        .title-bar {
+            background-color: #FFFFFF;
+            color: #000000;
+            padding: 6px 8px;
+            font-weight: normal;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #CCCCCC;
+            font-size: 12px;
+            user-select: none;
+        }
+        
+        .window-title {
+            color: #000000;
+            margin-left: 4px;
+        }
+        
+        .window-controls {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .control-btn {
+            width: 22px;
+            height: 22px;
+            background-color: #FFFFFF;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-family: 'Segoe UI', Tahoma;
+            font-size: 12px;
+            color: #000000;
+            transition: background-color 0.2s;
+        }
+        
+        .control-btn:hover {
+            background-color: #E5E5E5;
+        }
+        
+        .close:hover {
+            background-color: #E81123;
+            color: white;
+        }
+        
+        /* Main content styling */
+        .window-content {
+            padding: 25px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #FFFFFF;
+            font-weight: normal;
+        }
+        
+        .tagline {
+            font-size: 14px;
+            color: #AAAAAA;
+            margin-top: 8px;
+        }
+        
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3A3A3A;
+            color: #FFFFFF;
+            text-decoration: none;
+            border-radius: 0;
+            font-weight: normal;
+            border: 1px solid #555;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            min-width: 180px;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: #4A4A4A;
+            border-color: #666;
+        }
+        
+        .btn-download {
+            background-color: #2E7D32;
+            border-color: #1B5E20;
+        }
+        
+        .btn-download:hover {
+            background-color: #1B5E20;
+        }
+        
+        .features {
+            background-color: #252525;
+            padding: 20px;
+            border: 1px solid #444;
+            margin-top: 25px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            color: #777;
+            font-size: 12px;
+            border-top: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-window">
+        <div class="title-bar">
+            <span class="window-title">ServerCraft</span>
+            <div class="window-controls">
+                <button class="control-btn">−</button>
+                <button class="control-btn">□</button>
+                <button class="control-btn close">×</button>
+            </div>
+        </div>
+        
+        <div class="window-content">
+            <header>
+                <h1>Servercraft</h1>
+                <p class="tagline">The ultimate tool for Minecraft server management and automation</p>
+            </header>
+
+            <div class="buttons">
+                <a href="https://github.com/lazerkatsweirdstuff/servercraft/releases/latest" class="btn btn-download">Download Servercraft</a>
+                <a href="https://example.com" class="btn">Wiki & Documentation</a>
+            </div>
+
+            <div class="features">
+                <h2>Why Choose Servercraft?</h2>
+                <ul>
+                    <li>Simple yet powerful server management interface</li>
+                    <li>Automate self hosting</li>
+                    <li>Monitor server chat in real-time</li>
+                    <li>Cross-platform compatibility</li>
+                    <li>Open-source</li>
+                </ul>
+
+                <h2>Getting Started</h2>
+                <p>Download Servercraft using the button above and follow the installation instructions for your platform. Visit our wiki for detailed documentation and tutorials.</p>
+            </div>
+
+            <footer>
+                <p>&copy; 2025 Studio9. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>
