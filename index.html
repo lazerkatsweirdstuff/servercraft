@@ -3,62 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Servercraft Wiki - Minecraft Server Management</title>
+    <title>Servercraft - Minecraft Server Management</title>
     <style>
-        /* Windows-style dark theme */
+        /* Dark theme with exact colors */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #1E1E1E;
+            background-color: #2D2D2D;
             color: #E0E0E0;
-            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         
         .app-window {
             width: 90%;
-            max-width: 1000px;
-            margin: 20px auto;
-            background-color: #252525;
-            border: 1px solid #3E3E3E;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
+            max-width: 800px;
+            background-color: #1E1E1E;
+            border: 1px solid #444;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            margin: 20px 0;
         }
         
         .title-bar {
             background-color: #FFFFFF;
-            padding: 5px 0;
+            color: #000000;
+            padding: 6px 8px;
+            font-weight: normal;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #E5E5E5;
+            border-bottom: 1px solid #CCCCCC;
+            font-size: 12px;
             user-select: none;
         }
         
         .window-title {
             color: #000000;
-            font-size: 12px;
-            margin-left: 12px;
-            font-weight: 500;
+            margin-left: 4px;
         }
         
         .window-controls {
             display: flex;
-            height: 32px;
+            gap: 2px;
         }
         
         .control-btn {
-            width: 46px;
-            height: 32px;
-            background: none;
+            width: 22px;
+            height: 22px;
+            background-color: #FFFFFF;
             border: none;
-            color: #000000;
-            font-size: 10px;
-            cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: all 0.2s;
+            cursor: pointer;
+            font-family: 'Segoe UI', Tahoma;
+            font-size: 12px;
+            color: #000000;
+            transition: background-color 0.2s;
         }
         
         .control-btn:hover {
@@ -70,76 +74,51 @@
             color: white;
         }
         
-        /* Main content */
+        /* Main content styling */
         .window-content {
-            padding: 28px;
+            padding: 25px;
         }
         
-        h1, h2, h3 {
-            color: #FFFFFF;
-            border-bottom: 1px solid #3E3E3E;
-            padding-bottom: 8px;
+        header {
+            text-align: center;
+            margin-bottom: 25px;
         }
         
         h1 {
+            margin: 0;
             font-size: 24px;
-            margin-top: 0;
+            color: #FFFFFF;
+            font-weight: normal;
         }
         
-        h2 {
-            font-size: 20px;
+        .tagline {
+            font-size: 14px;
+            color: #AAAAAA;
+            margin-top: 8px;
         }
         
-        h3 {
-            font-size: 16px;
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
         }
         
-        /* Navigation */
-        .sidebar {
-            width: 220px;
-            background-color: #2D2D2D;
-            float: left;
-            padding: 15px;
-            border-right: 1px solid #3E3E3E;
-            height: 100%;
-        }
-        
-        .main-content {
-            margin-left: 250px;
-            padding: 15px;
-        }
-        
-        .nav-item {
-            padding: 8px 12px;
-            color: #E0E0E0;
-            text-decoration: none;
-            display: block;
-            border-radius: 4px;
-            margin-bottom: 4px;
-        }
-        
-        .nav-item:hover {
-            background-color: #3A3A3A;
-        }
-        
-        .nav-item.active {
-            background-color: #2E7D32;
-            color: white;
-        }
-        
-        /* Buttons and form elements */
         .btn {
             display: inline-block;
-            padding: 8px 16px;
+            padding: 10px 20px;
             background-color: #3A3A3A;
             color: #FFFFFF;
             text-decoration: none;
+            border-radius: 0;
+            font-weight: normal;
             border: 1px solid #555;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
-            margin: 5px 0;
-            border-radius: 0;
+            min-width: 180px;
+            text-align: center;
         }
         
         .btn:hover {
@@ -147,102 +126,36 @@
             border-color: #666;
         }
         
-        .btn-primary {
+        .btn-download {
             background-color: #2E7D32;
             border-color: #1B5E20;
         }
         
-        .btn-primary:hover {
+        .btn-download:hover {
             background-color: #1B5E20;
         }
         
-        /* Console output styling */
-        .console {
-            background-color: #1E1E1E;
-            border: 1px solid #3E3E3E;
-            padding: 12px;
-            font-family: 'Consolas', monospace;
-            font-size: 13px;
-            height: 300px;
-            overflow-y: auto;
-            margin: 15px 0;
+        .features {
+            background-color: #252525;
+            padding: 20px;
+            border: 1px solid #444;
+            margin-top: 25px;
         }
         
-        .console-line {
-            margin: 2px 0;
-        }
-        
-        .console-time {
-            color: #7F7F7F;
-        }
-        
-        .console-info {
-            color: #569CD6;
-        }
-        
-        .console-success {
-            color: #6A9955;
-        }
-        
-        /* Server properties table */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-        }
-        
-        th, td {
-            border: 1px solid #3E3E3E;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        
-        th {
-            background-color: #2D2D2D;
-            color: #FFFFFF;
-        }
-        
-        tr:nth-child(even) {
-            background-color: #2A2A2A;
-        }
-        
-        /* Property list styling */
-        .property-list {
-            font-family: 'Consolas', monospace;
-            font-size: 13px;
-            background-color: #2A2A2A;
-            padding: 15px;
-            border: 1px solid #3E3E3E;
-            margin: 15px 0;
-        }
-        
-        .property-item {
-            margin-bottom: 8px;
-            display: flex;
-        }
-        
-        .property-name {
-            color: #569CD6;
-            min-width: 250px;
-        }
-        
-        .property-value {
-            color: #CE9178;
-        }
-        
-        /* Java installation notice */
-        .java-notice {
-            background-color: #2A2D2E;
-            border-left: 4px solid #569CD6;
-            padding: 12px;
-            margin: 15px 0;
+        footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            color: #777;
+            font-size: 12px;
+            border-top: 1px solid #444;
         }
     </style>
 </head>
 <body>
     <div class="app-window">
         <div class="title-bar">
-            <div class="window-title">ServerCraft Wiki</div>
+            <span class="window-title">ServerCraft</span>
             <div class="window-controls">
                 <button class="control-btn">−</button>
                 <button class="control-btn">□</button>
@@ -251,176 +164,33 @@
         </div>
         
         <div class="window-content">
-            <div class="sidebar">
-                <h3>Navigation</h3>
-                <a href="#getting-started" class="nav-item active">Getting Started</a>
-                <a href="#java-installation" class="nav-item">Java Installation</a>
-                <a href="#server-setup" class="nav-item">Server Setup</a>
-                <a href="#console" class="nav-item">Console Management</a>
-                <a href="#properties" class="nav-item">Server Properties</a>
-                <a href="#commands" class="nav-item">Server Commands</a>
-                <a href="#troubleshooting" class="nav-item">Troubleshooting</a>
+            <header>
+                <h1>Servercraft</h1>
+                <p class="tagline">The ultimate tool for Minecraft server management and automation</p>
+            </header>
+
+            <div class="buttons">
+                <a href="https://github.com/lazerkatsweirdstuff/servercraft/releases/latest" class="btn btn-download">Download Servercraft</a>
+                <a href="https://lazerkatsweirdstuff.github.io/servercraft/wiki.html" class="btn">Wiki & Documentation</a>
             </div>
-            
-            <div class="main-content">
-                <h1 id="getting-started">Servercraft Wiki</h1>
-                <p>Welcome to the Servercraft documentation. This wiki will guide you through setting up and managing your Minecraft server.</p>
-                
-                <div class="java-notice">
-                    <h3>Important Note About Java</h3>
-                    <p>Servercraft automatically installs the required Java version in your server directory during setup. This ensures compatibility and prevents conflicts with other Java installations on your system.</p>
-                    <p>The Java installation will be located in: <code>[Your Server Folder]/java</code></p>
-                </div>
-                
-                <h2>System Requirements</h2>
+
+            <div class="features">
+                <h2>Why Choose Servercraft?</h2>
                 <ul>
-                    <li>Windows 10/11, macOS, or Linux</li>
-                    <li>Minimum 2GB RAM (4GB recommended for modded servers)</li>
-                    <li>At least 5GB free disk space (including Java installation)</li>
+                    <li>Simple yet powerful server management interface</li>
+                    <li>Automate self hosting</li>
+                    <li>Monitor server chat in real-time</li>
+                    <li>Cross-platform compatibility</li>
+                    <li>Open-source</li>
                 </ul>
-                
-                <h2 id="java-installation">Java Installation Details</h2>
-                <h3>Automatic Java Management</h3>
-                <p>Servercraft handles Java installation automatically:</p>
-                <ul>
-                    <li>Downloads the correct Java version for your system</li>
-                    <li>Installs it locally in your server directory</li>
-                    <li>Configures the server to use this Java version</li>
-                    <li>Does not affect system-wide Java installations</li>
-                </ul>
-                
-                <h2 id="server-setup">Server Setup</h2>
-                <h3>Initial Configuration</h3>
-                <p>When setting up your server, you'll need to configure these basic settings:</p>
-                <ul>
-                    <li>Output folder for server files</li>
-                    <li>Minecraft world to import (optional)</li>
-                    <li>RAM allocation (minimum and maximum)</li>
-                    <li>Accept the Minecraft EULA</li>
-                </ul>
-                
-                <h2 id="console">Console Management</h2>
-                <h3>Server Console</h3>
-                <p>The console allows you to monitor and control your server in real-time:</p>
-                <div class="console">
-                    <div class="console-line"><span class="console-time">[10:01:08]</span> <span class="console-info">[User] joined the game</span></div>
-                    <div class="console-line"><span class="console-time">[10:01:15]</span> <span class="console-info">[User]: Hello everyone!</span></div>
-                    <div class="console-line"><span class="console-time">[10:01:20]</span> <span class="console-success">Server is running smoothly</span></div>
-                </div>
-                
-                <h2 id="properties">Server Properties</h2>
-                <p>Servercraft allows you to edit all server.properties settings. Here's the complete list of properties you can configure:</p>
-                
-                <div class="property-list">
-                    <h3>Basic Settings</h3>
-                    <div class="property-item"><span class="property-name">level-name</span><span class="property-value">world</span></div>
-                    <div class="property-item"><span class="property-name">motd</span><span class="property-value">A Lovely Server</span></div>
-                    <div class="property-item"><span class="property-name">gamemode</span><span class="property-value">survival</span></div>
-                    <div class="property-item"><span class="property-name">difficulty</span><span class="property-value">easy</span></div>
-                    <div class="property-item"><span class="property-name">level-type</span><span class="property-value">minecraft:normal</span></div>
-                    <div class="property-item"><span class="property-name">level-seed</span><span class="property-value"></span></div>
-                    
-                    <h3>Network Settings</h3>
-                    <div class="property-item"><span class="property-name">server-port</span><span class="property-value">25565</span></div>
-                    <div class="property-item"><span class="property-name">online-mode</span><span class="property-value">true</span></div>
-                    <div class="property-item"><span class="property-name">white-list</span><span class="property-value">false</span></div>
-                    <div class="property-item"><span class="property-name">max-players</span><span class="property-value">20</span></div>
-                    <div class="property-item"><span class="property-name">network-compression-threshold</span><span class="property-value">256</span></div>
-                    
-                    <h3>Performance Settings</h3>
-                    <div class="property-item"><span class="property-name">view-distance</span><span class="property-value">10</span></div>
-                    <div class="property-item"><span class="property-name">simulation-distance</span><span class="property-value">10</span></div>
-                    <div class="property-item"><span class="property-name">max-tick-time</span><span class="property-value">60000</span></div>
-                    <div class="property-item"><span class="property-name">max-chained-neighbor-updates</span><span class="property-value">1000000</span></div>
-                    <div class="property-item"><span class="property-name">max-world-size</span><span class="property-value">29999984</span></div>
-                    
-                    <h3>Gameplay Settings</h3>
-                    <div class="property-item"><span class="property-name">spawn-monsters</span><span class="property-value">true</span></div>
-                    <div class="property-item"><span class="property-name">spawn-protection</span><span class="property-value">16</span></div>
-                    <div class="property-item"><span class="property-name">allow-nether</span><span class="property-value">true</span></div>
-                    <div class="property-item"><span class="property-name">allow-flight</span><span class="property-value">false</span></div>
-                    <div class="property-item"><span class="property-name">pvp</span><span class="property-value">true</span></div>
-                    <div class="property-item"><span class="property-name">hardcore</span><span class="property-value">false</span></div>
-                </div>
-                
-                <h2 id="commands">Server Commands</h2>
-                <h3>Essential Commands</h3>
-                <table>
-                    <tr>
-                        <th>Command</th>
-                        <th>Description</th>
-                    </tr>
-                    <tr>
-                        <td><code>help</code></td>
-                        <td>Show list of available commands</td>
-                    </tr>
-                    <tr>
-                        <td><code>stop</code></td>
-                        <td>Safely shutdown the server</td>
-                    </tr>
-                    <tr>
-                        <td><code>op [player]</code></td>
-                        <td>Grant operator status to a player</td>
-                    </tr>
-                    <tr>
-                        <td><code>whitelist on/off</code></td>
-                        <td>Enable or disable the whitelist</td>
-                    </tr>
-                    <tr>
-                        <td><code>ban [player]</code></td>
-                        <td>Ban a player from the server</td>
-                    </tr>
-                    <tr>
-                        <td><code>kick [player]</code></td>
-                        <td>Remove a player from the server</td>
-                    </tr>
-                </table>
-                
-                <h3>World Management</h3>
-                <table>
-                    <tr>
-                        <th>Command</th>
-                        <th>Description</th>
-                    </tr>
-                    <tr>
-                        <td><code>save-all</code></td>
-                        <td>Force save the world</td>
-                    </tr>
-                    <tr>
-                        <td><code>save-off</code></td>
-                        <td>Disable world saving</td>
-                    </tr>
-                    <tr>
-                        <td><code>save-on</code></td>
-                        <td>Enable world saving</td>
-                    </tr>
-                    <tr>
-                        <td><code>time set [value]</code></td>
-                        <td>Change the world time</td>
-                    </tr>
-                </table>
-                
-                <h2 id="troubleshooting">Troubleshooting</h2>
-                <h3>Common Issues</h3>
-                <table>
-                    <tr>
-                        <th>Issue</th>
-                        <th>Solution</th>
-                    </tr>
-                    <tr>
-                        <td>Server won't start</td>
-                        <td>Check EULA acceptance and RAM allocation</td>
-                    </tr>
-                    <tr>
-                        <td>Players can't connect</td>
-                        <td>Verify port forwarding and firewall settings</td>
-                    </tr>
-                    <tr>
-                        <td>High lag or performance issues</td>
-                        <td>Reduce view-distance and simulation-distance</td>
-                    </tr>
-                </table>
+
+                <h2>Getting Started</h2>
+                <p>Download Servercraft using the button above and follow the installation instructions for your platform. Visit our wiki for detailed documentation and tutorials.</p>
             </div>
+
+            <footer>
+                <p>&copy; 2025 Studio9. All rights reserved.</p>
+            </footer>
         </div>
     </div>
 </body>
