@@ -3,7 +3,7 @@
 
 ▼ ▼ ▼ ▼ ▼ Download the latest version
 
-[![Button Click]][Link]  [![loglo]][biglo] [![bugg]][boris]
+[![Button Click]][Link]  [![loglo]][biglo]  [![bugg]][boris]
 
 ##
 
