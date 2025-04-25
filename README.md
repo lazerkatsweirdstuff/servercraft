@@ -42,6 +42,6 @@ Easy to use server properties editor - Forget the days of boring notepad editing
 Infinite Servers - For times when 3 isn't enough (Darn FeatherMC!)
 
 [Button Click]: https://img.shields.io/badge/Install-grey?style=for-the-badge&logoColor=white&logo=Files
-[Link]: https://github.com/lazerkatsweirdstuff/servercraft/releases/download/V0.3/ServerCraftv0.3.exe
+[Link]: https://github.com/lazerkatsweirdstuff/servercraft/releases/download/V0.4/ServerCraftv0.4.exe
 [loglo]: https://img.shields.io/badge/Home%20page-grey?style=for-the-badge&logoColor=white
 [biglo]: https://lazerkatsweirdstuff.github.io/servercraft/
