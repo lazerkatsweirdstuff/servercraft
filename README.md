@@ -9,7 +9,9 @@
 
 ▼ ▼ ▼ ▼ ▼ Star this project to support it
 
-[![Star this repo](https://img.shields.io/github/stars/lazerkatsweirdstuff/servercraft?style=social)]() This is the amount of people who have starred, so please click the star button in the top right corner: [![coolo](https://github.com/user-attachments/assets/ba10594e-3567-4c6f-8647-72ecc7292a3a)](). It supports the project a lot and it would be great if you could!
+[![Star this repo](https://img.shields.io/github/stars/lazerkatsweirdstuff/servercraft?style=social)]() This is the amount of people who have starred, so please click the star button in the top right corner: [![coolo](https://github.com/user-attachments/assets/ba10594e-3567-4c6f-8647-72ecc7292a3a)](). It supports the project a lot and it would be great if you could! 
+
+You'd also appear down here!
 
 ## Star History
 
