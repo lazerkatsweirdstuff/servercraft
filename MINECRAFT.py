@@ -36,7 +36,7 @@ class MinecraftServerSetup:
         self.eula_accepted = tk.BooleanVar()
         self.serveo_link = tk.StringVar()
         
-        # Server Address Frame
+        
         self.server_address_frame = tk.Frame(self.root, bg="#222")
         self.server_address_frame.pack(pady=(10, 0))
         
@@ -60,7 +60,7 @@ class MinecraftServerSetup:
         self.server_process = None
         self.prop_window = None
         self.serveo_process = None
-        self.server_port = 25565  # Default port
+        self.server_port = 25565  
 
         self.create_widgets()
 
@@ -207,7 +207,7 @@ class MinecraftServerSetup:
             with open(os.path.join(folder, "eula.txt"), "w") as f:
                 f.write("eula=true\n")
 
-        # Read server port from properties file
+       
         self.read_server_port(folder)
 
         self.log_console("Starting server...")
@@ -480,7 +480,7 @@ class MinecraftServerSetup:
                 for key, entry in entries.items():
                     f.write(f"{key}={entry.get()}\n")
             
-            # Update the server port if it was changed
+            
             if 'server-port' in entries:
                 try:
                     new_port = int(entries['server-port'].get())
@@ -499,7 +499,7 @@ class MinecraftServerSetup:
         tk.Button(scroll_frame, text="Apply", command=apply_changes, bg="green", fg="white").pack(pady=20)
 
     def restart_server(self):
-        # First kick all players with a message
+       
         if self.server_process:
             try:
                 self.log_console("Kicking all players...")
@@ -507,7 +507,7 @@ class MinecraftServerSetup:
                 self.server_process.stdin.write(f"kick @a {kick_msg}\n")
                 self.server_process.stdin.flush()
                 
-                # Give time for the kick command to process
+                
                 time.sleep(1)
                 
                 self.log_console("Stopping server...")
@@ -524,7 +524,7 @@ class MinecraftServerSetup:
                 self.server_started = False
                 self.server_address_frame.pack_forget()
 
-        # Then start a new server instance
+        
         folder = self.output_folder.get()
         java_path = os.path.join(folder, JAVA_FOLDER_NAME, "bin", "java.exe")
         
@@ -598,7 +598,7 @@ class MinecraftServerSetup:
     def run_serveo_ssh(self):
         try:
             self.log_console("Starting Serveo tunnel...")
-            # Read the server port before starting the tunnel
+            
             self.read_server_port(self.output_folder.get())
             
             process = subprocess.Popen(
