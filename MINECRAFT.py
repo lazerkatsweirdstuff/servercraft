@@ -17,7 +17,7 @@ import time
 spam = "false"
 SERVER_JAR_URL = "https://piston-data.mojang.com/v1/objects/e6ec2f64e6080b9b5d9b471b291c33cc7f509733/server.jar"
 SERVER_JAR_NAME = "server.jar"
-JAVA_ZIP_URL = "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse?project=jdk"
+JAVA_ZIP_URL = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.3_9.zip"
 JAVA_FOLDER_NAME = "jdk"
 
 class MinecraftServerSetup:
@@ -35,8 +35,11 @@ class MinecraftServerSetup:
         self.max_ram = tk.StringVar(value="2G")
         self.eula_accepted = tk.BooleanVar()
         self.serveo_link = tk.StringVar()
+        self.tunnel_service = tk.StringVar(value="serveo") 
+        self.custom_tunnel_command = tk.StringVar()
+        self.last_tunnel_address = ""  
         
-        
+      
         self.server_address_frame = tk.Frame(self.root, bg="#222")
         self.server_address_frame.pack(pady=(10, 0))
         
@@ -115,6 +118,43 @@ class MinecraftServerSetup:
         tk.Label(self.root, text="Max RAM (e.g. 2G):", **label_style).pack(pady=10)
         tk.Entry(self.root, textvariable=self.max_ram, **entry_style).pack()
 
+        
+        tunnel_frame = tk.Frame(self.root, bg="#222")
+        tunnel_frame.pack(pady=10)
+        tk.Label(tunnel_frame, text="Tunnel Service:", bg="#222", fg="white").pack(side="left")
+        
+        service_menu = tk.OptionMenu(tunnel_frame, self.tunnel_service, 
+                                   "serveo", "custom",
+                                   command=self.change_tunnel_service)
+        service_menu.config(bg="#333", fg="white", highlightthickness=0)
+        service_menu.pack(side="left", padx=5)
+        
+       
+        self.custom_command_frame = tk.Frame(self.root, bg="#222")
+        tk.Label(self.custom_command_frame, 
+                text="Custom SSH Command:", 
+                bg="#222", fg="white").pack(anchor="w")
+        
+        self.custom_command_entry = tk.Entry(
+            self.custom_command_frame, 
+            textvariable=self.custom_tunnel_command,
+            width=50,
+            bg="#333", 
+            fg="white"
+        )
+        self.custom_command_entry.pack(fill="x", pady=5)
+        
+        warning_label = tk.Label(
+            self.custom_command_frame,
+            text="⚠️ This is for more advanced users only!",
+            bg="#222",
+            fg="orange",
+            font=("Arial", 8)
+        )
+        warning_label.pack(anchor="w")
+        
+        self.custom_command_frame.pack_forget()
+
         self.eula_checkbox = tk.Checkbutton(self.root, text="I accept the EULA",
                                           variable=self.eula_accepted,
                                           bg="#222", fg="white", font=('Arial', 10),
@@ -149,6 +189,35 @@ class MinecraftServerSetup:
         self.edit_button.pack(pady=10)
         self.edit_button.pack_forget()
 
+    def change_tunnel_service(self, service):
+        """Handle tunnel service change"""
+        self.log_console(f"Tunnel service changed to: {service}")
+        
+        
+        if service == "custom":
+            
+            current_command = f"ssh -o StrictHostKeyChecking=no -R 0:localhost:{self.server_port} serveo.net"
+            self.custom_tunnel_command.set(current_command)
+            self.custom_command_frame.pack(fill="x", padx=10, pady=5)
+            
+            
+            if self.last_tunnel_address:
+                self.serveo_link.set(self.last_tunnel_address)
+                self.server_address_frame.pack()
+        else:
+            self.custom_command_frame.pack_forget()
+        
+        
+        if hasattr(self, 'serveo_process') and self.serveo_process:
+            try:
+                self.serveo_process.terminate()
+                self.log_console(f"Stopped previous {self.tunnel_service.get()} tunnel")
+            except Exception as e:
+                self.log_console(f"Error stopping tunnel: {e}")
+        
+        if self.server_started:
+            threading.Thread(target=self.run_tunnel, daemon=True).start()
+
     def browse_folder(self):
         folder = filedialog.askdirectory()
         if folder:
@@ -159,10 +228,14 @@ class MinecraftServerSetup:
             self.console_output.pack_forget()
             self.command_frame.pack_forget()
             self.console_toggle.config(text="Show Console Output ▼")
+            
+            self.root.geometry("600x700")
         else:
             self.console_output.pack(pady=5, fill='both', expand=True)
             self.command_frame.pack(pady=5, fill='x')
             self.console_toggle.config(text="Hide Console Output ▲")
+            
+            self.root.geometry("800x800")
         self.console_visible = not self.console_visible
 
     def run_setup_thread(self):
@@ -207,7 +280,7 @@ class MinecraftServerSetup:
             with open(os.path.join(folder, "eula.txt"), "w") as f:
                 f.write("eula=true\n")
 
-       
+        
         self.read_server_port(folder)
 
         self.log_console("Starting server...")
@@ -225,11 +298,145 @@ class MinecraftServerSetup:
             self.server_started = True
             self.edit_button.pack()
             threading.Thread(target=self.read_console_output, daemon=True).start()
-            threading.Thread(target=self.run_serveo_ssh, daemon=True).start()
+            threading.Thread(target=self.run_tunnel, daemon=True).start()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to start server:\n{e}")
             self.server_started = False
             self.server_process = None
+
+    def run_tunnel(self):
+        """Run the selected tunnel service"""
+        service = self.tunnel_service.get()
+        
+        if service == "serveo":
+            self.run_serveo_ssh()
+        elif service == "custom":
+            self.run_custom_tunnel()
+        else:
+            self.log_console(f"[ERROR] Unknown tunnel service: {service}")
+
+    def run_serveo_ssh(self):
+        try:
+            self.log_console("Starting Serveo tunnel...")
+           
+            self.read_server_port(self.output_folder.get())
+            
+            process = subprocess.Popen(
+                ['ssh', '-o', 'StrictHostKeyChecking=no',
+                 '-R', f'0:localhost:{self.server_port}', 'serveo.net'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True
+            )
+            self.serveo_process = process
+
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                self.log_console("[Serveo] " + line.strip())
+
+                if "Forwarding TCP" in line:
+                    parts = line.strip().split(" ")
+                    if len(parts) >= 5:
+                        serveo_address = parts[-1] 
+                        self.serveo_link.set(serveo_address)
+                        self.last_tunnel_address = serveo_address 
+                        self.server_address_frame.pack()
+                        self.server_address_frame.lift()
+                        self.update_window_size()
+
+        except Exception as e:
+            self.log_console(f"[ERROR] Serveo tunnel failed: {e}")
+
+    def run_custom_tunnel(self):
+        try:
+            self.log_console("Starting custom tunnel...")
+            self.read_server_port(self.output_folder.get())
+            
+            
+            command = self.custom_tunnel_command.get()
+            
+            
+            command_parts = command.split()
+            
+            process = subprocess.Popen(
+                command_parts,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                shell=True
+            )
+            self.serveo_process = process
+
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                self.log_console("[Custom Tunnel] " + line.strip())
+
+                
+                if "Forwarding TCP" in line:  
+                    parts = line.strip().split(" ")
+                    if len(parts) >= 5:
+                        address = parts[-1] 
+                        self.serveo_link.set(address)
+                        self.last_tunnel_address = address 
+                        self.server_address_frame.pack()
+                        self.server_address_frame.lift()
+                        self.update_window_size()
+                elif "tunneled with" in line:  
+                    match = re.search(r'https://[^\s]+', line)
+                    if match:
+                        address = match.group(0)
+                        self.serveo_link.set(address)
+                        self.last_tunnel_address = address  
+                        self.server_address_frame.pack()
+                        self.server_address_frame.lift()
+                        self.update_window_size()
+                elif "started tunnel" in line:  
+                    match = re.search(r'url=(tcp://[^\s]+)', line)
+                    if match:
+                        address = match.group(1)
+                        self.serveo_link.set(address)
+                        self.last_tunnel_address = address
+                        self.server_address_frame.pack()
+                        self.server_address_frame.lift()
+                        self.update_window_size()
+
+        except Exception as e:
+            self.log_console(f"[ERROR] Custom tunnel failed: {e}")
+
+    def update_window_size(self):
+        """Update window size to fit the address"""
+        
+        self.root.update_idletasks()
+        
+        
+        address_width = self.address_value.winfo_reqwidth()
+        label_width = self.address_label.winfo_reqwidth()
+        frame_padding = 20
+        required_width = address_width + label_width + frame_padding
+        
+        
+        required_height = 700 
+        if self.console_visible:
+            required_height = 800  
+        
+        
+        current_width = self.root.winfo_width()
+        current_height = self.root.winfo_height()
+        
+       
+        new_width = max(600 if not self.console_visible else 800, required_width)
+        new_height = max(required_height, current_height)
+        
+       
+        if new_width > current_width or new_height > current_height:
+            self.root.geometry(f"{new_width}x{new_height}")
+        
+       
+        self.console_output.see(tk.END)
 
     def read_server_port(self, folder):
         """Read the server port from server.properties or use default"""
@@ -301,19 +508,13 @@ class MinecraftServerSetup:
             os.makedirs(target_folder, exist_ok=True)
             zip_path = os.path.join(tempfile.gettempdir(), "java.zip")
 
-            req = urllib.request.Request(JAVA_ZIP_URL, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlretrieve(JAVA_ZIP_URL, zip_path) as response:
-                if response.status != 200:
-                    raise Exception(f"Download failed with status {response.status}")
+           
+            opener = urllib.request.build_opener()
+            opener.addheaders = [('User-Agent', 'Mozilla/5.0')]
+            urllib.request.install_opener(opener)
 
-                total_size = int(response.getheader('Content-Length', 0))
-                with open(zip_path, 'wb') as out_file:
-                    downloaded = 0
-                    while chunk := response.read(8192):
-                        out_file.write(chunk)
-                        downloaded += len(chunk)
-                        self.java_progress['value'] = (downloaded / total_size) * 100
-                        self.root.update_idletasks()
+            self.log_console("Downloading Java...")
+            urllib.request.urlretrieve(JAVA_ZIP_URL, zip_path, self._download_progress_hook)
 
             self.log_console("Extracting Java...")
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -321,23 +522,34 @@ class MinecraftServerSetup:
 
             os.remove(zip_path)
 
-            subfolders = [f for f in os.listdir(target_folder)
-                          if os.path.isdir(os.path.join(target_folder, f)) and f != JAVA_FOLDER_NAME]
-            if not subfolders:
-                raise Exception("Java ZIP did not extract correctly.")
+           
+            jdk_folder = None
+            for item in os.listdir(target_folder):
+                if item.startswith('jdk-') or item.lower().startswith('openjdk'):
+                    jdk_folder = os.path.join(target_folder, item)
+                    break
 
-            extracted_dir = os.path.join(target_folder, subfolders[0])
+            if not jdk_folder:
+                raise Exception("Java ZIP did not extract correctly - no JDK folder found.")
+
             final_path = os.path.join(target_folder, JAVA_FOLDER_NAME)
             if os.path.exists(final_path):
                 shutil.rmtree(final_path)
-            shutil.move(extracted_dir, final_path)
+            shutil.move(jdk_folder, final_path)
 
+            self.log_console("Java installation complete.")
             return True
 
         except Exception as e:
             messagebox.showerror("Java Error", f"Failed to download or extract Java:\n{e}")
             self.log_console(f"[ERROR] Java setup failed: {e}")
             return False
+
+    def _download_progress_hook(self, count, block_size, total_size):
+        if total_size > 0:
+            percent = min(int(count * block_size * 100 / total_size), 100)
+            self.java_progress['value'] = percent
+            self.root.update_idletasks()
 
     def import_world(self):
         folder = self.output_folder.get()
@@ -499,7 +711,7 @@ class MinecraftServerSetup:
         tk.Button(scroll_frame, text="Apply", command=apply_changes, bg="green", fg="white").pack(pady=20)
 
     def restart_server(self):
-       
+        
         if self.server_process:
             try:
                 self.log_console("Kicking all players...")
@@ -542,7 +754,7 @@ class MinecraftServerSetup:
             )
             self.server_started = True
             threading.Thread(target=self.read_console_output, daemon=True).start()
-            threading.Thread(target=self.run_serveo_ssh, daemon=True).start()
+            threading.Thread(target=self.run_tunnel, daemon=True).start()
         except Exception as e:
             self.log_console(f"[ERROR] Failed to restart server: {e}")
             self.server_started = False
@@ -553,7 +765,7 @@ class MinecraftServerSetup:
         if os.path.exists(ssh_path):
             return ssh_path
 
-        self.log_console("Downloading SSH client (for Serveo)...")
+        self.log_console("Downloading SSH client (for tunneling)...")
         try:
             ssh_url = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/v9.5.0.0p1-Beta/OpenSSH-Win64.zip"
             zip_path = os.path.join(tempfile.gettempdir(), "openssh.zip")
@@ -579,55 +791,26 @@ class MinecraftServerSetup:
             return None
 
     def on_close(self):
-        if self.server_process and self.server_process.poll() is None:
+        """Handle window closing event"""
+        if hasattr(self, 'server_process') and self.server_process and self.server_process.poll() is None:
             try:
-                self.log_console("Kicking all players before closing...")
-                kick_msg = "Sorry! The owner has shut down the server! Ask the owner for a new link or if you should stay on the same one, just rejoin"
-                self.server_process.stdin.write(f"kick @a {kick_msg}\n")
-                self.server_process.stdin.flush()
-                time.sleep(1)
-                
-                self.log_console("Stopping server before closing...")
+                self.log_console("Stopping server...")
                 self.server_process.stdin.write("stop\n")
                 self.server_process.stdin.flush()
                 self.server_process.wait(timeout=5)
             except Exception as e:
-                print(f"Error terminating server: {e}")
+                self.log_console(f"Error stopping server: {e}")
+        
+        if hasattr(self, 'serveo_process') and self.serveo_process:
+            try:
+                self.serveo_process.terminate()
+            except Exception as e:
+                self.log_console(f"Error stopping tunnel: {e}")
+        
         self.root.destroy()
-
-    def run_serveo_ssh(self):
-        try:
-            self.log_console("Starting Serveo tunnel...")
-            
-            self.read_server_port(self.output_folder.get())
-            
-            process = subprocess.Popen(
-                ['ssh', '-o', 'StrictHostKeyChecking=no',
-                 '-R', f'0:localhost:{self.server_port}', 'serveo.net'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True
-            )
-
-            while True:
-                line = process.stdout.readline()
-                if not line:
-                    break
-                self.log_console("[Serveo] " + line.strip())
-
-                if "Forwarding TCP" in line:
-                    parts = line.strip().split(" ")
-                    if len(parts) >= 5:
-                        serveo_address = parts[-1] 
-                        self.serveo_link.set(serveo_address)
-                        self.server_address_frame.pack()
-                        self.server_address_frame.lift()
-
-        except Exception as e:
-            self.log_console(f"[ERROR] Serveo tunnel failed: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = MinecraftServerSetup(root)
-    root.protocol("WM_DELETE_WINDOW", app.on_close)
+    root.protocol("WM_DELETE_WINDOW", app.on_close) 
     root.mainloop()
