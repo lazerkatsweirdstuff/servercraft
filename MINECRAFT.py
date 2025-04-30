@@ -13,6 +13,14 @@ import tkinter.ttk as ttk
 import pyperclip
 import re
 import time
+import sys
+import ctypes
+import socket
+import urllib.error
+
+
+if sys.executable.endswith("ServerCraftv0.6.exe"):
+    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
 spam = "false"
 SERVER_JAR_URL = "https://piston-data.mojang.com/v1/objects/e6ec2f64e6080b9b5d9b471b291c33cc7f509733/server.jar"
@@ -35,11 +43,11 @@ class MinecraftServerSetup:
         self.max_ram = tk.StringVar(value="2G")
         self.eula_accepted = tk.BooleanVar()
         self.serveo_link = tk.StringVar()
-        self.tunnel_service = tk.StringVar(value="serveo") 
+        self.tunnel_service = tk.StringVar(value="serveo")  
         self.custom_tunnel_command = tk.StringVar()
         self.last_tunnel_address = ""  
         
-      
+       
         self.server_address_frame = tk.Frame(self.root, bg="#222")
         self.server_address_frame.pack(pady=(10, 0))
         
@@ -66,6 +74,90 @@ class MinecraftServerSetup:
         self.server_port = 25565  
 
         self.create_widgets()
+
+    def check_serveo_status(self):
+        """Check if Serveo is online"""
+        try:
+           
+            socket.create_connection(("serveo.net", 22), timeout=5)
+            self.log_console("Serveo is up!")
+        except (socket.timeout, ConnectionRefusedError, urllib.error.URLError) as e:
+            self.log_console("It looks like Serveo, our provider is down. This happens often so please try again later. "
+                           "If you think this is a mistake, please report it on our github page")
+        except Exception as e:
+            self.log_console(f"[ERROR] Could not check Serveo status: {e}")
+
+    def check_custom_provider_status(self):
+        """Check if the custom provider is online"""
+        command = self.custom_tunnel_command.get()
+        
+        hostname = None
+        
+        
+        patterns = [
+            r'ssh.*?([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})',  
+            r'ngrok.*?(tcp://)?([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', 
+            r'localhost\.run', 
+            r'localtunnel\.me',  
+            r'playit\.gg' 
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, command)
+            if match:
+                hostname = match.group(1) if match.groups() else match.group(0)
+                break
+        
+        if not hostname:
+            self.log_console("[INFO] Could not determine provider from custom command")
+            return
+        
+       
+        if 'serveo.net' in hostname:
+            self.check_serveo_status()
+            return
+        elif 'localhost.run' in hostname:
+            self.check_localhost_run_status()
+            return
+        elif 'playit.gg' in hostname:
+            self.check_playit_gg_status()
+            return
+        
+       
+        try:
+           
+            for port in [80, 443, 22]:
+                try:
+                    socket.create_connection((hostname, port), timeout=5)
+                    self.log_console(f"{hostname} is up!")
+                    return
+                except (socket.timeout, ConnectionRefusedError):
+                    continue
+            
+           
+            self.log_console(f"{hostname} seems to be down. If you think this is a mistake, please report it on our github page")
+        except Exception as e:
+            self.log_console(f"[ERROR] Could not check {hostname} status: {e}")
+
+    def check_localhost_run_status(self):
+        """Check if localhost.run is online"""
+        try:
+            socket.create_connection(("localhost.run", 443), timeout=5)
+            self.log_console("localhost.run is up!")
+        except (socket.timeout, ConnectionRefusedError, urllib.error.URLError) as e:
+            self.log_console("localhost.run seems to be down. If you think this is a mistake, please report it on our github page")
+        except Exception as e:
+            self.log_console(f"[ERROR] Could not check localhost.run status: {e}")
+
+    def check_playit_gg_status(self):
+        """Check if playit.gg is online"""
+        try:
+            socket.create_connection(("playit.gg", 443), timeout=5)
+            self.log_console("playit.gg is up!")
+        except (socket.timeout, ConnectionRefusedError, urllib.error.URLError) as e:
+            self.log_console("playit.gg seems to be down. If you think this is a mistake, please report it on our github page")
+        except Exception as e:
+            self.log_console(f"[ERROR] Could not check playit.gg status: {e}")
 
     def copy_server_address(self, event=None):
         """Copy server address to clipboard when clicked"""
@@ -165,8 +257,9 @@ class MinecraftServerSetup:
         self.java_progress = ttk.Progressbar(self.root, length=400, mode='determinate')
         self.java_progress.pack(pady=5)
 
-        tk.Button(self.root, text="Setup and Start Server", command=self.run_setup_thread,
-                 bg="green", fg="white", font=("Arial", 12, "bold")).pack(pady=10)
+        self.setup_button = tk.Button(self.root, text="Setup and Start Server", command=self.run_setup_thread,
+                                    bg="green", fg="white", font=("Arial", 12, "bold"))
+        self.setup_button.pack(pady=10)
 
         self.console_toggle = tk.Button(self.root, text="Show Console Output ▼", command=self.toggle_console,
                                       bg="#333", fg="white")
@@ -195,7 +288,6 @@ class MinecraftServerSetup:
         
         
         if service == "custom":
-            
             current_command = f"ssh -o StrictHostKeyChecking=no -R 0:localhost:{self.server_port} serveo.net"
             self.custom_tunnel_command.set(current_command)
             self.custom_command_frame.pack(fill="x", padx=10, pady=5)
@@ -241,10 +333,10 @@ class MinecraftServerSetup:
     def run_setup_thread(self):
         global spam
         if spam == "false":
-            spam = "true"
-            threading.Thread(target=self.setup_server).start()
+            spam = "false"
+            threading.Thread(target=self.setup_server_thread).start()
 
-    def setup_server(self):
+    def setup_server_thread(self):
         folder = self.output_folder.get()
         if not folder or not os.path.isdir(folder):
             messagebox.showerror("Error", "Please choose a valid output folder.")
@@ -253,6 +345,14 @@ class MinecraftServerSetup:
         if not self.eula_accepted.get():
             messagebox.showerror("EULA", "You must accept the EULA to continue.")
             return
+
+        
+        provider = self.tunnel_service.get()
+        if provider == "serveo":
+            self.check_serveo_status()
+        elif provider == "custom":
+           
+            self.check_custom_provider_status()
 
         ssh_path = self.check_or_install_ssh(folder)
         if not ssh_path:
@@ -280,11 +380,26 @@ class MinecraftServerSetup:
             with open(os.path.join(folder, "eula.txt"), "w") as f:
                 f.write("eula=true\n")
 
-        
+       
+        icon_path = os.path.join(folder, "server-icon.png")
+        if not os.path.exists(icon_path):
+            try:
+                self.log_console("Setting default server icon...")
+                default_icon_url = "https://raw.githubusercontent.com/lazerkatsweirdstuff/servercraft/refs/heads/main/iconserver.png"
+                urllib.request.urlretrieve(default_icon_url, icon_path)
+            except Exception as e:
+                self.log_console(f"[WARNING] Could not set default server icon: {e}")
+
+       
         self.read_server_port(folder)
 
         self.log_console("Starting server...")
         try:
+          
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
             self.server_process = subprocess.Popen(
                 [java_path, f"-Xms{self.min_ram.get()}", f"-Xmx{self.max_ram.get()}", "-jar", SERVER_JAR_NAME, "nogui"],
                 cwd=folder,
@@ -293,9 +408,11 @@ class MinecraftServerSetup:
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                universal_newlines=True
+                universal_newlines=True,
+                startupinfo=startupinfo
             )
             self.server_started = True
+            self.update_button_state()
             self.edit_button.pack()
             threading.Thread(target=self.read_console_output, daemon=True).start()
             threading.Thread(target=self.run_tunnel, daemon=True).start()
@@ -318,15 +435,21 @@ class MinecraftServerSetup:
     def run_serveo_ssh(self):
         try:
             self.log_console("Starting Serveo tunnel...")
-           
+            
             self.read_server_port(self.output_folder.get())
             
+            
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
             process = subprocess.Popen(
                 ['ssh', '-o', 'StrictHostKeyChecking=no',
                  '-R', f'0:localhost:{self.server_port}', 'serveo.net'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True
+                text=True,
+                startupinfo=startupinfo
             )
             self.serveo_process = process
 
@@ -354,9 +477,14 @@ class MinecraftServerSetup:
             self.log_console("Starting custom tunnel...")
             self.read_server_port(self.output_folder.get())
             
-            
+        
             command = self.custom_tunnel_command.get()
             
+            
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
             
             command_parts = command.split()
             
@@ -365,7 +493,8 @@ class MinecraftServerSetup:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                shell=True
+                shell=True,
+                startupinfo=startupinfo
             )
             self.serveo_process = process
 
@@ -381,11 +510,11 @@ class MinecraftServerSetup:
                     if len(parts) >= 5:
                         address = parts[-1] 
                         self.serveo_link.set(address)
-                        self.last_tunnel_address = address 
+                        self.last_tunnel_address = address  
                         self.server_address_frame.pack()
                         self.server_address_frame.lift()
                         self.update_window_size()
-                elif "tunneled with" in line:  
+                elif "tunneled with" in line: 
                     match = re.search(r'https://[^\s]+', line)
                     if match:
                         address = match.group(0)
@@ -394,12 +523,12 @@ class MinecraftServerSetup:
                         self.server_address_frame.pack()
                         self.server_address_frame.lift()
                         self.update_window_size()
-                elif "started tunnel" in line:  
+                elif "started tunnel" in line: 
                     match = re.search(r'url=(tcp://[^\s]+)', line)
                     if match:
                         address = match.group(1)
                         self.serveo_link.set(address)
-                        self.last_tunnel_address = address
+                        self.last_tunnel_address = address 
                         self.server_address_frame.pack()
                         self.server_address_frame.lift()
                         self.update_window_size()
@@ -418,7 +547,7 @@ class MinecraftServerSetup:
         frame_padding = 20
         required_width = address_width + label_width + frame_padding
         
-        
+       
         required_height = 700 
         if self.console_visible:
             required_height = 800  
@@ -427,15 +556,15 @@ class MinecraftServerSetup:
         current_width = self.root.winfo_width()
         current_height = self.root.winfo_height()
         
-       
+        
         new_width = max(600 if not self.console_visible else 800, required_width)
         new_height = max(required_height, current_height)
         
-       
+        
         if new_width > current_width or new_height > current_height:
             self.root.geometry(f"{new_width}x{new_height}")
         
-       
+        
         self.console_output.see(tk.END)
 
     def read_server_port(self, folder):
@@ -468,6 +597,7 @@ class MinecraftServerSetup:
                     self.server_started = False
                     self.server_process = None
                     self.server_address_frame.pack_forget()
+                    self.update_button_state()
                 break
             
             self.log_console(line.strip())
@@ -481,6 +611,7 @@ class MinecraftServerSetup:
             self.log_console("[ERROR] Server has stopped running.")
             self.server_started = False
             self.server_process = None
+            self.update_button_state()
             return
 
         command = self.command_entry.get().strip()
@@ -500,6 +631,7 @@ class MinecraftServerSetup:
             self.log_console("[ERROR] Server connection broken - server may have crashed")
             self.server_started = False
             self.server_process = None
+            self.update_button_state()
         except Exception as e:
             self.log_console(f"[ERROR] Failed to send command: {str(e)}")
 
@@ -522,7 +654,7 @@ class MinecraftServerSetup:
 
             os.remove(zip_path)
 
-           
+            
             jdk_folder = None
             for item in os.listdir(target_folder):
                 if item.startswith('jdk-') or item.lower().startswith('openjdk'):
@@ -620,13 +752,37 @@ class MinecraftServerSetup:
         if self.icon_path:
             self.prop_window.iconbitmap(self.icon_path)
 
-        entries = {}
-        prop_path = os.path.join(self.output_folder.get(), "server.properties")
-        if not os.path.exists(prop_path):
-            messagebox.showerror("Error", "server.properties file not found.")
-            self.prop_window.destroy()
-            return
+   
+        top_frame = tk.Frame(self.prop_window, bg="#222")
+        top_frame.pack(fill="x", padx=10, pady=10)
 
+     
+        desc_frame = tk.Frame(top_frame, bg="#222")
+        desc_frame.pack(fill="x", pady=(0, 10))
+        tk.Label(desc_frame, text="Server Description:", bg="#222", fg="white").pack(anchor="w")
+        self.desc_entry = tk.Entry(desc_frame, bg="#333", fg="white")
+        self.desc_entry.pack(fill="x")
+
+
+        button_icon_frame = tk.Frame(top_frame, bg="#222")
+        button_icon_frame.pack(fill="x", pady=5)
+        
+
+        icon_controls_frame = tk.Frame(button_icon_frame, bg="#222")
+        icon_controls_frame.pack(side="left", fill="x", expand=True)
+        
+        tk.Button(icon_controls_frame, text="Set Server Icon", command=self.set_server_icon, 
+                bg="#555", fg="white").pack(side="left", padx=(0, 10))
+        
+        self.icon_preview_label = tk.Label(icon_controls_frame, text="(No preview)", bg="#222", fg="gray")
+        self.icon_preview_label.pack(side="left")
+
+       
+        apply_button = tk.Button(button_icon_frame, text="Apply Changes", command=self.apply_property_changes,
+                               bg="green", fg="white")
+        apply_button.pack(side="right")
+
+        
         canvas = tk.Canvas(self.prop_window, bg="#222", highlightthickness=0)
         scrollbar = tk.Scrollbar(self.prop_window, orient="vertical", command=canvas.yview)
         scroll_frame = tk.Frame(canvas, bg="#222")
@@ -643,72 +799,93 @@ class MinecraftServerSetup:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        with open(prop_path, "r") as f:
-            lines = [line.strip() for line in f.readlines() if "=" in line]
-
-        for line in lines:
-            key, value = line.split("=", 1)
-            tk.Label(scroll_frame, text=key, bg="#222", fg="white").pack()
-            entry = tk.Entry(scroll_frame, bg="#333", fg="white")
-            entry.insert(0, value)
-            entry.pack(pady=2, fill="x", padx=10)
-            entries[key] = entry
-
-        preview_label = tk.Label(scroll_frame, text="", bg="#222", fg="white")
-        preview_label.pack(pady=(10, 0))
-
-        def update_preview(path):
-            try:
-                img = Image.open(path)
-                img.thumbnail((64, 64))
-                img = ImageTk.PhotoImage(img)
-                preview_label.configure(image=img)
-                preview_label.image = img
-            except Exception as e:
-                preview_label.configure(text="(Preview unavailable)", fg="gray")
-
-        def set_server_icon():
-            file_path = filedialog.askopenfilename(
-                title="Select a Server Icon",
-                filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.bmp")]
-            )
-            if not file_path:
-                return
-            try:
-                img = Image.open(file_path).convert("RGBA")
-                img = img.resize((64, 64), Image.LANCZOS)
-                icon_path = os.path.join(self.output_folder.get(), "server-icon.png")
-                img.save(icon_path, "PNG")
-                update_preview(icon_path)
-                preview_label.configure(text="✅ Icon updated!", fg="lightgreen")
-                preview_label.after(3000, lambda: preview_label.configure(text=""))
-            except Exception as e:
-                messagebox.showerror("Error", f"Could not set icon:\n{e}")
-
-        tk.Button(scroll_frame, text="Set Server Icon", command=set_server_icon, bg="#555", fg="white").pack(pady=10)
-
-        def apply_changes():
-            with open(prop_path, "w") as f:
-                for key, entry in entries.items():
-                    f.write(f"{key}={entry.get()}\n")
-            
-            
-            if 'server-port' in entries:
-                try:
-                    new_port = int(entries['server-port'].get())
-                    if new_port != self.server_port:
-                        self.server_port = new_port
-                        self.log_console(f"Server port changed to {new_port}. Restarting tunnel...")
-                        if hasattr(self, 'serveo_process') and self.serveo_process:
-                            self.serveo_process.terminate()
-                except ValueError:
-                    self.log_console("[ERROR] Invalid port number in server.properties")
-            
-            messagebox.showinfo("Saved", "Settings applied. Restarting server...")
+        self.prop_entries = {} 
+        prop_path = os.path.join(self.output_folder.get(), "server.properties")
+        if not os.path.exists(prop_path):
+            messagebox.showerror("Error", "server.properties file not found.")
             self.prop_window.destroy()
-            self.restart_server()
+            return
 
-        tk.Button(scroll_frame, text="Apply", command=apply_changes, bg="green", fg="white").pack(pady=20)
+      
+        with open(prop_path, "r") as f:
+            for line in f:
+                if line.startswith("motd="):
+                    _, value = line.split("=", 1)
+                    self.desc_entry.insert(0, value.strip())
+                    break
+
+        
+        with open(prop_path, "r") as f:
+            for line in f:
+                if "=" in line and not line.startswith("motd="):
+                    key, value = line.split("=", 1)
+                    tk.Label(scroll_frame, text=key, bg="#222", fg="white").pack()
+                    entry = tk.Entry(scroll_frame, bg="#333", fg="white")
+                    entry.insert(0, value)
+                    entry.pack(pady=2, fill="x", padx=10)
+                    self.prop_entries[key] = entry
+
+       
+        icon_path = os.path.join(self.output_folder.get(), "server-icon.png")
+        if os.path.exists(icon_path):
+            self.update_icon_preview(icon_path)
+
+    def set_server_icon(self):
+        file_path = filedialog.askopenfilename(
+            title="Select a Server Icon",
+            filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.bmp")]
+        )
+        if not file_path:
+            return
+        try:
+            img = Image.open(file_path).convert("RGBA")
+            img = img.resize((64, 64), Image.LANCZOS)
+            icon_path = os.path.join(self.output_folder.get(), "server-icon.png")
+            img.save(icon_path, "PNG")
+            self.update_icon_preview(icon_path)
+            self.icon_preview_label.configure(text="✅ Icon updated!", fg="lightgreen")
+            self.icon_preview_label.after(3000, lambda: self.icon_preview_label.configure(text=""))
+           
+            self.prop_window.lift()
+            self.prop_window.focus_force()
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not set icon:\n{e}")
+
+    def update_icon_preview(self, path):
+        try:
+            img = Image.open(path)
+            img.thumbnail((64, 64))
+            img = ImageTk.PhotoImage(img)
+            self.icon_preview_label.configure(image=img)
+            self.icon_preview_label.image = img
+        except Exception as e:
+            self.icon_preview_label.configure(text="(Preview unavailable)", fg="gray")
+
+    def apply_property_changes(self):
+        prop_path = os.path.join(self.output_folder.get(), "server.properties")
+        with open(prop_path, "w") as f:
+            
+            f.write(f"motd={self.desc_entry.get()}\n")
+            
+            
+            for key, entry in self.prop_entries.items():
+                f.write(f"{key}={entry.get()}\n")
+        
+       
+        if 'server-port' in self.prop_entries:
+            try:
+                new_port = int(self.prop_entries['server-port'].get())
+                if new_port != self.server_port:
+                    self.server_port = new_port
+                    self.log_console(f"Server port changed to {new_port}. Restarting tunnel...")
+                    if hasattr(self, 'serveo_process') and self.serveo_process:
+                        self.serveo_process.terminate()
+            except ValueError:
+                self.log_console("[ERROR] Invalid port number in server.properties")
+        
+        messagebox.showinfo("Saved", "Settings applied. Restarting server...")
+        self.prop_window.destroy()
+        self.restart_server()
 
     def restart_server(self):
         
@@ -734,6 +911,7 @@ class MinecraftServerSetup:
             finally:
                 self.server_process = None
                 self.server_started = False
+                self.update_button_state()
                 self.server_address_frame.pack_forget()
 
         
@@ -742,6 +920,11 @@ class MinecraftServerSetup:
         
         try:
             self.log_console("Restarting server with new settings...")
+           
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
             self.server_process = subprocess.Popen(
                 [java_path, f"-Xms{self.min_ram.get()}", f"-Xmx{self.max_ram.get()}", "-jar", SERVER_JAR_NAME, "nogui"],
                 cwd=folder,
@@ -750,15 +933,18 @@ class MinecraftServerSetup:
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                universal_newlines=True
+                universal_newlines=True,
+                startupinfo=startupinfo
             )
             self.server_started = True
+            self.update_button_state()
             threading.Thread(target=self.read_console_output, daemon=True).start()
             threading.Thread(target=self.run_tunnel, daemon=True).start()
         except Exception as e:
             self.log_console(f"[ERROR] Failed to restart server: {e}")
             self.server_started = False
             self.server_process = None
+            self.update_button_state()
     
     def check_or_install_ssh(self, folder):
         ssh_path = os.path.join(folder, "ssh.exe")
@@ -790,6 +976,60 @@ class MinecraftServerSetup:
             self.log_console(f"[ERROR] Failed to download SSH: {e}")
             return None
 
+    def stop_server(self):
+        """Stop the Minecraft server and tunnel"""
+        if not self.server_started:
+            return
+
+        try:
+            
+            if self.server_process and self.server_process.poll() is None:
+                self.log_console("Saving world...")
+                self.server_process.stdin.write("save-all\n")
+                self.server_process.stdin.flush()
+                time.sleep(1)  
+                
+               
+                self.log_console("Stopping server...")
+                self.server_process.stdin.write("stop\n")
+                self.server_process.stdin.flush()
+                
+               
+                try:
+                    self.server_process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    self.log_console("[WARNING] Server didn't stop gracefully, forcing termination")
+                    self.server_process.terminate()
+                
+                self.server_process = None
+                self.log_console("Server stopped successfully")
+            
+            
+            if hasattr(self, 'serveo_process') and self.serveo_process:
+                self.log_console("Stopping tunnel...")
+                self.serveo_process.terminate()
+                self.serveo_process = None
+                self.log_console("Tunnel stopped successfully")
+            
+           
+            self.server_started = False
+            self.update_button_state()
+            self.server_address_frame.pack_forget()
+            self.edit_button.pack_forget()
+            
+        except Exception as e:
+            self.log_console(f"[ERROR] Failed to stop server: {e}")
+            messagebox.showerror("Error", f"Failed to stop server:\n{e}")
+
+    def update_button_state(self):
+        """Update the button text and color based on server state"""
+        if self.server_started:
+            self.setup_button.config(text="Stop Server", bg="red", command=self.stop_server)
+            self.edit_button.pack()
+        else:
+            self.setup_button.config(text="Setup and Start Server", bg="green", command=self.run_setup_thread)
+            self.edit_button.pack_forget()
+
     def on_close(self):
         """Handle window closing event"""
         if hasattr(self, 'server_process') and self.server_process and self.server_process.poll() is None:
@@ -812,5 +1052,5 @@ class MinecraftServerSetup:
 if __name__ == "__main__":
     root = tk.Tk()
     app = MinecraftServerSetup(root)
-    root.protocol("WM_DELETE_WINDOW", app.on_close) 
+    root.protocol("WM_DELETE_WINDOW", app.on_close)  
     root.mainloop()
