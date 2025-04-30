@@ -146,7 +146,7 @@ class MinecraftServerSetup:
         
         warning_label = tk.Label(
             self.custom_command_frame,
-            text=" ⚠️ This is for more advanced users only!",
+            text="⚠️ This is for more advanced users only!",
             bg="#222",
             fg="orange",
             font=("Arial", 8)
