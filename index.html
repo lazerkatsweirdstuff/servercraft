@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Servercraft - Minecraft Server Management</title>
     <style>
+
+		@property --grad {
+			syntax: "<number>";
+			inherits: true;
+			initial-value: 0;
+		}
         /* Dark theme with exact colors */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -127,12 +133,14 @@
         }
         
         .btn-download {
-            background-color: #2E7D32;
+            background: linear-gradient(#47ba86 calc(1% * var(--grad)) 0%, #2E7D32 calc(1% * var(--grad)) 100%);
             border-color: #1B5E20;
+			transition: --grad 0.4s;
         }
         
         .btn-download:hover {
-            background-color: #1B5E20;
+            /*background-color: #1B5E20;*/
+			--grad: 100;
         }
         
         .features {
@@ -189,7 +197,7 @@
                             <a href="https://github.com/lazerkatsweirdstuff/servercraft" target="_blank" class="btn" title="Star this project on GitHub">
             Star on GitHub!</a>
                             <a href="https://discord.gg/UAzBTx3V" target="_blank" class="btn" title="Join our discord server becuase coolo">
-            Join our discord server!</a>
+				Join our discord server!</a>
             </div>
 
 </a>
