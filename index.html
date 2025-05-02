@@ -131,6 +131,19 @@
             background-color: #4A4A4A;
             border-color: #666;
         }
+
+		.wiki {
+			transform: rotateY(calc(3.6deg * var(--grad))); 
+			transition: --grad 0.6s;
+
+		}
+		.wikihov:hover > .wiki {
+			--grad: 100;
+		}
+		.wikihov {
+			perspective: 1000px;
+			cursor: pointer;
+		}
         
         .btn-download {
             background: linear-gradient(#47ba86 calc(1% * var(--grad)) 0%, #2E7D32 calc(1% * var(--grad)) 100%);
@@ -179,7 +192,7 @@
 
             <div class="buttons">
                 <a href="https://github.com/lazerkatsweirdstuff/servercraft/releases/latest" class="btn btn-download">Download Servercraft</a>
-                <a href="https://lazerkatsweirdstuff.github.io/servercraft/wiki.html" class="btn">Wiki & Documentation</a>
+				<span class="wikihov"><a href="https://lazerkatsweirdstuff.github.io/servercraft/wiki.html" class="btn wiki">Wiki & Documentation</a></span>
             </div>
 
             <div class="features">
