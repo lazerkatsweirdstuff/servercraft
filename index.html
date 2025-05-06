@@ -144,6 +144,22 @@
 			perspective: 1000px;
 			cursor: pointer;
 		}
+
+		.github {
+			transition: --grad 0.6s ease-in-out;
+			transform: translateY(calc(sin(var(--grad)) * -12%));
+		}
+
+		.githov:hover > .github {
+			--grad: calc(12.5663 - 3.1459);
+		}
+
+		.githov {
+		/*	background: blue; <- for debug */
+			cursor: pointer;
+			padding-top: 9px;
+			padding-bottom: 9px;
+		}
         
         .btn-download {
             background: linear-gradient(#47ba86 calc(1% * var(--grad)) 0%, #2E7D32 calc(1% * var(--grad)) 100%);
@@ -162,6 +178,16 @@
             border: 1px solid #444;
             margin-top: 25px;
         }
+
+		.copyright {
+		}
+
+		.credit {
+			font-size:  60%;
+            text-align: center;
+			margin-top:-3%;
+			padding: 0%;
+		}
         
         footer {
             text-align: center;
@@ -207,8 +233,7 @@
 
                 <h2>Getting Started</h2>
                 <p>Download Servercraft using the button above and follow the installation instructions. Visit our wiki for detailed documentation and tutorials.</p>
-                            <a href="https://github.com/lazerkatsweirdstuff/servercraft" target="_blank" class="btn" title="Star this project on GitHub">
-            Star on GitHub!</a>
+				<span class="githov"><a href="https://github.com/lazerkatsweirdstuff/servercraft" target="_blank" class="btn github" title="Star this project on GitHub">Star on GitHub!</a></span>
                             <a href="https://discord.gg/UAzBTx3V" target="_blank" class="btn" title="Join our discord server becuase coolo">
 				Join our discord server!</a>
             </div>
@@ -216,9 +241,10 @@
 </a>
 
             <footer>
-                <p>&copy; 2025 Studio9. All rights reserved.</p>
+				<p class="copyright">&copy; 2025 Studio9. All rights reserved.</p> 
             </footer>
         </div>
+				<p class="credit">Website made by &commat;Cool-Pancakes with button animations by &commat;DuckDood</p>
     </div>
 </body>
 </html>
