@@ -10,7 +10,7 @@ import tempfile
 from PIL import Image, ImageTk
 import webbrowser
 import tkinter.ttk as ttk
-import pyperclip
+import pyperclip 
 import re
 import time
 import sys
